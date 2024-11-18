@@ -1,5 +1,5 @@
 name: Build and Test
-on: [push, pull_request]
+on: [push, pull_request,workflow_dispatch]
 jobs:
   moderate-modern:
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
