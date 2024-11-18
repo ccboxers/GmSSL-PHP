@@ -1,29 +1,56 @@
 name: Build and Test
 on: [push, pull_request,workflow_dispatch]
+
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
 jobs:
-  moderate-modern:
-    name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
-    runs-on: ${{ matrix.operating-system }}
+  build:
+    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
+    # You can convert this to a matrix build if you need cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     strategy:
       matrix:
-        operating-system: ['ubuntu-latest']
-        php-versions: ['7.3', '7.4', '8.0', '8.1']
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+        os: [ ubuntu-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php-versions }}
-          extensions: mbstring
-          ini-values: error_reporting=-1, display_errors=On
-          coverage: none
-      - name: phpize
-        run: phpize
-      - name: configure
-        run: ./configure
-      - name: make
-        run: make
-      - name: test
-        run: make test
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        repository: 'ccboxers/GmSSL'
+
+    - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    # - name: Test
+    #   working-directory: ${{github.workspace}}/build
+    #   # Execute tests defined by the CMake configuration.
+    #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+    #   run: ctest --rerun-failed --output-on-failure -C ${{env.BUILD_TYPE}}
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.1
+        extensions: mbstring
+        ini-values: error_reporting=-1, display_errors=On
+        coverage: none
+    - name: phpize
+      run: phpize
+    - name: configure
+      run: ./configure
+    - name: make
+      run: make
+    - name: test
+      run: make test
